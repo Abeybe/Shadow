@@ -11,6 +11,8 @@
 
 //追記の例
 
+//ここに追記します(コメントアウト「//」忘れずに) by アベ
+
 /*
 Thomas Sanchez Lengeling.
  http://codigogenerativo.com/
