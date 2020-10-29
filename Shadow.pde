@@ -1,68 +1,97 @@
-//1.自分のブランチを作る(名字とかがわかりやすい)
-  //エディターの左下にある(master)をクリック->「create new branch(新しい分岐の作成)」
-
-//2.ためしにこの下に何か追記する
-
-//3.エディター左側に変更ファイル一覧が出るので、
-  //(+)「変更をステージ」
-  //->(✓)「コミット」
-  //->(...)「プッシュ」
-  //(初回のみ「ブランチを公開」)
-
-//追記の例
-
-//ここに追記します(コメントアウト「//」忘れずに) by アベ
-
 /*
 Thomas Sanchez Lengeling.
  http://codigogenerativo.com/
 
  KinectPV2, Kinect for Windows v2 library for processing
 
- Skeleton depth tracking example
+ Skeleton color map example.
+ Skeleton (x,y) positions are mapped to match the color Frame
  */
 
-import java.util.ArrayList;
 import KinectPV2.KJoint;
 import KinectPV2.*;
 
 KinectPV2 kinect;
 
+boolean foundUsers = false;
+
+PImage k_Color,k_Color2,k_Mask,k_Mask2,k_Black;
+float k_Ratio,k_newjointRatioX,k_newjointRatioY;
+PVector k_newjoint ;
+
 
 void setup() {
-  size(512, 424, P3D);
+  size(1980 , 1080, P3D);
 
   kinect = new KinectPV2(this);
 
-  //Enables depth and Body tracking (mask image)
-  kinect.enableDepthMaskImg(true);
-  kinect.enableSkeletonDepthMap(true);
+  kinect.enableSkeletonColorMap(true);
+  kinect.enableColorImg(true);
+
+  kinect.enableDepthImg(true);
+  kinect.enableBodyTrackImg(true);
+  k_newjoint = new PVector(0,0,0);
+
 
   kinect.init();
+  
+  k_Color2 = createImage(1980, 1080, PImage.RGB);
+  k_Mask2 = createImage(1980, 1080, PImage.RGB);
+  k_Black = createImage(1980, 1080, PImage.RGB);
 }
 
 void draw() {
-  background(0);
+  background(255);
+  frameRate(30);
+  //image(kinect.getColorImage(), 0, 0, width, height);
+  //image(kinect.getBodyTrackImage(), 0, 0, width, height);
+  k_Color = kinect.getColorImage();
 
-  image(kinect.getDepthMaskImage(), 0, 0);
+  k_Mask = kinect.getBodyTrackImage();
+  //k_Mask.filter(INVERT);
+  //k_Color2 = get(0,0,1980, 1080);
+  //image(k_Color,0,0,1980, 1080);
+  k_Color2 = get(0,0,1980, 1080);
+  
+  k_Ratio = 1980 / k_Mask.width;
+  println(k_Ratio);
+  
+  pushMatrix();
+  translate(0,-300);
+  image(k_Mask,0,0,k_Mask.width*3.85, k_Mask.height*3.85);
+  //image(k_Mask3,0,0);
+  popMatrix();
+  k_Mask2 = get(0,0,1980, 1080);
 
-  //get the skeletons as an Arraylist of KSkeletons
-  ArrayList<KSkeleton> skeletonArray =  kinect.getSkeletonDepthMap();
+  k_Color2.mask(k_Mask2);
+  image(k_Color2,0,0,width,height);
+  //image(k_Mask2,0,0,width,height);
+  
+  //1980*1080 to 512*424
+  k_Color2.loadPixels();
+  for(int k_imageX = 0; k_imageX>10; k_imageX++){
+    for(int k_imageY = 0; k_imageY>10; k_imageY++){
+      
+    }
+  }
+  
+  
+  ArrayList<KSkeleton> skeletonArray =  kinect.getSkeletonColorMap();
 
-  //individual joints
+  //individual JOINTS
   for (int i = 0; i < skeletonArray.size(); i++) {
     KSkeleton skeleton = (KSkeleton) skeletonArray.get(i);
-    //if the skeleton is being tracked compute the skleton joints
     if (skeleton.isTracked()) {
       KJoint[] joints = skeleton.getJoints();
 
       color col  = skeleton.getIndexColor();
       fill(col);
       stroke(col);
-
       drawBody(joints);
-      drawHandState(joints[KinectPV2.JointType_HandRight]);
-      drawHandState(joints[KinectPV2.JointType_HandLeft]);
+
+      //draw different color for each hand state
+      //drawHandState(joints[KinectPV2.JointType_HandRight]);
+      //drawHandState(joints[KinectPV2.JointType_HandLeft]);
     }
   }
 
@@ -70,8 +99,9 @@ void draw() {
   text(frameRate, 50, 50);
 }
 
-//draw the body
+//DRAW BODY
 void drawBody(KJoint[] joints) {
+/*
   drawBone(joints, KinectPV2.JointType_Head, KinectPV2.JointType_Neck);
   drawBone(joints, KinectPV2.JointType_Neck, KinectPV2.JointType_SpineShoulder);
   drawBone(joints, KinectPV2.JointType_SpineShoulder, KinectPV2.JointType_SpineMid);
@@ -104,8 +134,7 @@ void drawBody(KJoint[] joints) {
   drawBone(joints, KinectPV2.JointType_HipLeft, KinectPV2.JointType_KneeLeft);
   drawBone(joints, KinectPV2.JointType_KneeLeft, KinectPV2.JointType_AnkleLeft);
   drawBone(joints, KinectPV2.JointType_AnkleLeft, KinectPV2.JointType_FootLeft);
-
-  //Single joints
+*/
   drawJoint(joints, KinectPV2.JointType_HandTipLeft);
   drawJoint(joints, KinectPV2.JointType_HandTipRight);
   drawJoint(joints, KinectPV2.JointType_FootLeft);
@@ -117,15 +146,27 @@ void drawBody(KJoint[] joints) {
   drawJoint(joints, KinectPV2.JointType_Head);
 }
 
-//draw a single joint
+//draw joint
 void drawJoint(KJoint[] joints, int jointType) {
+  
+  k_newjointRatioX = joints[jointType].getX() - width/2;
+  k_newjointRatioY = joints[jointType].getY() - height/2;
+  
+  //k_newjoint.x = joints[jointType].getX();
+  k_newjoint.x = map(k_newjointRatioX,-width/2,width/2,-250,width+250);
+  //k_newjoint.y = joints[jointType].getY();
+  k_newjoint.y = map(k_newjointRatioY,-height/2,height/2,-150,height+100);
+
+  k_newjoint.z = joints[jointType].getZ();
+  
   pushMatrix();
-  translate(joints[jointType].getX(), joints[jointType].getY(), joints[jointType].getZ());
+  translate(k_newjoint.x, k_newjoint.y, k_newjoint.z);
+  //translate(joints[jointType].getX(), joints[jointType].getY(), joints[jointType].getZ());
   ellipse(0, 0, 25, 25);
   popMatrix();
 }
 
-//draw a bone from two joints
+//draw bone
 void drawBone(KJoint[] joints, int jointType1, int jointType2) {
   pushMatrix();
   translate(joints[jointType1].getX(), joints[jointType1].getY(), joints[jointType1].getZ());
@@ -134,7 +175,7 @@ void drawBone(KJoint[] joints, int jointType1, int jointType2) {
   line(joints[jointType1].getX(), joints[jointType1].getY(), joints[jointType1].getZ(), joints[jointType2].getX(), joints[jointType2].getY(), joints[jointType2].getZ());
 }
 
-//draw a ellipse depending on the hand state
+//draw hand state
 void drawHandState(KJoint joint) {
   noStroke();
   handState(joint.getState());
@@ -151,8 +192,6 @@ Different hand state
  KinectPV2.HandState_Lasso
  KinectPV2.HandState_NotTracked
  */
-
-//Depending on the hand state change the color
 void handState(int handState) {
   switch(handState) {
   case KinectPV2.HandState_Open:
@@ -165,7 +204,7 @@ void handState(int handState) {
     fill(0, 0, 255);
     break;
   case KinectPV2.HandState_NotTracked:
-    fill(100, 100, 100);
+    fill(255, 255, 255);
     break;
   }
 }
