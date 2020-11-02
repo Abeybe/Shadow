@@ -19,9 +19,14 @@ PImage k_Color,k_Color2,k_Mask,k_Mask2,k_Black;
 float k_Ratio,k_newjointRatioX,k_newjointRatioY;
 PVector k_newjoint ;
 
+boolean mainStart=false;
+
+void settings(){
+  fullScreen(P3D,2);  
+}
 
 void setup() {
-  size(1980 , 1080, P3D);
+  //size(1980 , 1080, P3D);
 
   kinect = new KinectPV2(this);
 
@@ -32,15 +37,18 @@ void setup() {
   kinect.enableBodyTrackImg(true);
   k_newjoint = new PVector(0,0,0);
 
-
   kinect.init();
   
-  k_Color2 = createImage(1980, 1080, PImage.RGB);
-  k_Mask2 = createImage(1980, 1080, PImage.RGB);
-  k_Black = createImage(1980, 1080, PImage.RGB);
+  k_Color2 = createImage(width, height, PImage.RGB);
+  k_Mask2 = createImage(width, height, PImage.RGB);
+  k_Black = createImage(width, height, PImage.RGB);
+  
+  //secoundApplet=new SecoundApplet(this);
+  //PApplet.runSketch(new String[]{"Secound"},secoundApplet);
 }
 
 void draw() {
+  if(!mainStart)mainStart=true;
   background(255);
   frameRate(30);
   //image(kinect.getColorImage(), 0, 0, width, height);
@@ -51,37 +59,33 @@ void draw() {
   //k_Mask.filter(INVERT);
   //k_Color2 = get(0,0,1980, 1080);
   //image(k_Color,0,0,1980, 1080);
-  k_Color2 = get(0,0,1980, 1080);
+  k_Color2 = get(0,0,width,height);//get(0,0,1980, 1080);
   
-  k_Ratio = 1980 / k_Mask.width;
-  println(k_Ratio);
+  k_Ratio = height / k_Mask.width;
+  //println(k_Ratio);
+  
+  filter(BLUR,2);
   
   pushMatrix();
-  translate(0,-300);
-  image(k_Mask,0,0,k_Mask.width*3.85, k_Mask.height*3.85);
-  //image(k_Mask3,0,0);
+    scale(-1,1);
+    translate(-width,-300);
+    image(k_Mask,-width,0,k_Mask.width*3.85, k_Mask.height*3.85);
+    //image(k_Mask3,0,0);
+  
+    k_Mask2 = get(0,0,width,height);//get(0,0,1980, 1080);
+  
+    //translate(width/2,0);
+    k_Color2.mask(k_Mask2);
+    //image(k_Color2,0,0,width,height);
+    //image(k_Mask2,0,0,width,height);
   popMatrix();
-  k_Mask2 = get(0,0,1980, 1080);
-
-  k_Color2.mask(k_Mask2);
-  image(k_Color2,0,0,width,height);
-  //image(k_Mask2,0,0,width,height);
-  
-  //1980*1080 to 512*424
-  k_Color2.loadPixels();
-  for(int k_imageX = 0; k_imageX>10; k_imageX++){
-    for(int k_imageY = 0; k_imageY>10; k_imageY++){
-      
-    }
-  }
-  
   
   ArrayList<KSkeleton> skeletonArray =  kinect.getSkeletonColorMap();
 
   //individual JOINTS
   for (int i = 0; i < skeletonArray.size(); i++) {
     KSkeleton skeleton = (KSkeleton) skeletonArray.get(i);
-    if (skeleton.isTracked()) {
+    if (skeleton.isTracked() && skeletonArray.size()==1) {
       KJoint[] joints = skeleton.getJoints();
 
       color col  = skeleton.getIndexColor();
@@ -94,9 +98,7 @@ void draw() {
       //drawHandState(joints[KinectPV2.JointType_HandLeft]);
     }
   }
-
-  fill(255, 0, 0);
-  text(frameRate, 50, 50);
+  
 }
 
 //DRAW BODY
